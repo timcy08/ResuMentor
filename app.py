@@ -6,7 +6,27 @@ import requests
 import pandas as pd
 import pickle
 
-st.set_page_config(page_title="Resume Parser", page_icon="📄", layout="wide")
+st.set_page_config(page_title="ResuMentor", page_icon="📄", layout="wide")
+
+# ── ResuMentor Title ───────────────────────────────────────────────────────────
+st.markdown("""
+<div style="text-align: center; padding: 20px 0 10px 0;">
+    <span style="
+        font-size: 3.5rem;
+        font-weight: 900;
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 2px;
+    ">ResuMentor</span>
+    <p style="
+        color: #64748b;
+        font-size: 1.1rem;
+        margin-top: 5px;
+        font-weight: 500;
+    ">AI-Powered Resume Parser & Mentor Evaluator</p>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -115,12 +135,11 @@ body { font-family: 'Segoe UI', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-title">📄 Resume Parser</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Upload your resume PDF — we\'ll extract and display every section clearly</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Upload your resume PDF — we\'ll parse, analyze & predict your mentor rating!</div>', unsafe_allow_html=True)
 st.markdown("""
 <div class="pipeline">
   📤 Upload &nbsp;→&nbsp; 🔍 Extract Text &nbsp;→&nbsp;
-  🗂️ Identify Sections &nbsp;→&nbsp; ✅ Display Results
+  🗂️ Identify Sections &nbsp;→&nbsp; 🤖 Predict Mentor Rating &nbsp;→&nbsp; ✅ Display Results
 </div>
 """, unsafe_allow_html=True)
 
@@ -138,15 +157,15 @@ def extract_text(file) -> str:
 
 # ── Section splitter ───────────────────────────────────────────────────────────
 HEADINGS = {
-    "SUMMARY":        r"(professional summary|summary|objective|about me|profile|career objective)",
-    "SKILLS":         r"(technical skills?|skills?|core competencies|technologies|tools)",
-    "EDUCATION":      r"(education|academic|qualifications)",
-    "EXPERIENCE":     r"(work experience|professional experience|employment history|experience)",
-    "INTERNSHIP":     r"(internship|intern experience|training experience)",
-    "PROJECTS":       r"(projects?|personal projects?|academic projects?|key projects?)",
-    "CERTIFICATIONS": r"(certifications?|licenses?|courses?|credentials?)",
-    "ACHIEVEMENTS":   r"(achievements?|awards?|honors?|accomplishments?|hackathon)",
-    "LANGUAGES":      r"(languages?)",
+    "SUMMARY":        r"(professional summary|summary|objective|about me|profile|career objective|career profile|professional profile|about|overview)",
+    "SKILLS":         r"(technical skills?|skills?|core competencies|technologies|tools|tech stack|expertise|competencies|key skills?|it skills?|programming skills?|soft skills?)",
+    "EDUCATION":      r"(education|academic|qualifications|academic background|educational background|academic qualifications|degrees?)",
+    "EXPERIENCE":     r"(work experience|professional experience|employment history|experience|work history|career history|job experience|relevant experience)",
+    "INTERNSHIP":     r"(internships?|intern experience|training experience|industrial training|vocational training|summer internship|winter internship|internship experience|industry experience|practical experience|practical training|apprenticeship|work placement|placement experience|industrial experience)",
+    "PROJECTS":       r"(projects?|personal projects?|academic projects?|key projects?|major projects?|mini projects?|project work|project details|notable projects?|relevant projects?|college projects?)",
+    "CERTIFICATIONS": r"(certifications?|licenses?|courses?|credentials?|certificate programs?|online courses?|professional certifications?|training certifications?|moocs?|udemy|coursera|nptel)",
+    "ACHIEVEMENTS":   r"(achievements?|awards?|honors?|honours?|accomplishments?|hackathon|extra curricular|activities|positions? of responsibility|leadership|volunteering|volunteer)",
+    "LANGUAGES":      r"(languages?|spoken languages?|language proficiency)",
 }
 
 def parse_resume(text: str) -> dict:
@@ -174,9 +193,14 @@ def parse_resume(text: str) -> dict:
                 result[current].append("")
             continue
         matched = False
+        clean_stripped = re.sub(r"[:\-\u2013]+$", "", stripped).strip()
         for section, pattern in HEADINGS.items():
-            if re.fullmatch(pattern, stripped, re.IGNORECASE) or \
-               (len(stripped) < 40 and re.match(r"^" + pattern + r"[:\s]*$", stripped, re.IGNORECASE)):
+            if (
+                re.fullmatch(pattern, clean_stripped, re.IGNORECASE)
+                or re.fullmatch(pattern, stripped, re.IGNORECASE)
+                or (len(stripped) < 50 and re.match(r"^" + pattern + r"[\s:]*$", stripped, re.IGNORECASE))
+                or (len(clean_stripped) < 50 and re.match(r"^" + pattern + r"[\s:]*$", clean_stripped, re.IGNORECASE))
+            ):
                 current = section
                 matched = True
                 break
@@ -369,15 +393,48 @@ if uploaded:
         # INTERNSHIP
         intern = [l for l in data.get("INTERNSHIP", []) if l]
         if intern:
-            entries = lines_to_entries(intern)
+            # Smart split: detect new internship entry by bold/title-like lines
+            entries = []
+            current_entry = []
+            for line in intern:
+                # A new internship starts if line looks like a title:
+                # not starting with -, •, * and is not a date/location line
+                is_new_entry = (
+                    line
+                    and not line.startswith(("-", "•", "*", "-"))
+                    and not re.match(r"^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d)", line, re.I)
+                    and not re.match(r"^(remote|onsite|hybrid|present|expected)", line, re.I)
+                    and len(line) > 10
+                    and current_entry  # only split if we already have an entry
+                    and re.search(r"(intern|analyst|engineer|developer|scientist|manager|at |@)", line, re.I)
+                )
+                if is_new_entry:
+                    if current_entry:
+                        entries.append(current_entry)
+                    current_entry = [line]
+                elif line == "":
+                    if current_entry:
+                        entries.append(current_entry)
+                    current_entry = []
+                else:
+                    current_entry.append(line)
+            if current_entry:
+                entries.append(current_entry)
+
+            # fallback: if only 1 entry found, use lines_to_entries
+            if len(entries) <= 1:
+                entries = lines_to_entries(intern)
+
             html = ""
             for e in entries:
+                if not e:
+                    continue
                 html += '<div class="entry-block">'
                 html += f'<div class="entry-title">{e[0]}</div>'
                 for sub in e[1:]:
                     html += f'<div class="entry-body">{sub}</div>'
                 html += "</div>"
-            section_box("🏢 Internship", html)
+            section_box(f"🏢 Internship ({len(entries)} found)", html)
 
         # ── PROJECTS (resume + GitHub) ─────────────────────────────────────
         proj_raw = [l for l in data.get("PROJECTS", []) if l]
@@ -424,7 +481,7 @@ if uploaded:
 
         github_proj_count = len(gh_repos)
 
-        # ── Deduplicate: if resume project matches a GitHub repo, count as 1
+        # ── Deduplicate
         import difflib
         def normalize(s):
             return re.sub(r"[^a-z0-9]", "", s.lower())
@@ -441,7 +498,6 @@ if uploaded:
         total_proj_count = resume_proj_count + github_proj_count - duplicates
 
         if proj_raw or gh_repos:
-            # ── Stats bar ──────────────────────────────────────────────────
             st.markdown(f"""
             <div class="section-wrap">
             <div class="sec-title">🚀 Projects</div>
@@ -465,7 +521,6 @@ if uploaded:
             </div>
             """, unsafe_allow_html=True)
 
-            # ── Resume projects ─────────────────────────────────────────────
             for i, name_r in enumerate(resume_proj_names, 1):
                 st.markdown(f"""
                 <div style="display:flex;align-items:center;gap:0.6rem;
@@ -478,12 +533,10 @@ if uploaded:
                                  color:#4338ca;border-radius:20px;padding:2px 10px;">Resume</span>
                 </div>""", unsafe_allow_html=True)
 
-            # ── GitHub repos ────────────────────────────────────────────────
             for j, repo in enumerate(gh_repos, resume_proj_count + 1):
                 repo_url  = repo["url"]
                 repo_name = repo["name"]
                 repo_lang = repo.get("language") or ""
-                # Build badges as a plain string — no nested HTML, no f-string conflicts
                 badges = ""
                 if repo_lang.strip():
                     badges += (
@@ -513,6 +566,15 @@ if uploaded:
     # ── Raw text ──────────────────────────────────────────────────────────────
     with st.expander("📃 View Raw Extracted Text"):
         st.text(raw_text)
+
+    # ── Debug: show detected sections ─────────────────────────────────────────
+    with st.expander("🔍 Debug — What sections were detected from your resume?"):
+        for sec in ["SUMMARY","SKILLS","EDUCATION","EXPERIENCE","INTERNSHIP","PROJECTS","CERTIFICATIONS","ACHIEVEMENTS","LANGUAGES"]:
+            lines_found = [l for l in data.get(sec, []) if l]
+            status = f"✅ {len(lines_found)} lines found" if lines_found else "❌ Not detected"
+            st.markdown(f"**{sec}**: {status}")
+            if lines_found:
+                st.caption(" | ".join(lines_found[:3]) + ("..." if len(lines_found) > 3 else ""))
 
     # ── JSON export ───────────────────────────────────────────────────────────
     export = {
@@ -546,7 +608,6 @@ if uploaded:
         parsed_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "parsed_resumes")
         os.makedirs(parsed_dir, exist_ok=True)
         mentor_id = None
-        # try to pick a stable id: GitHub username if present, else email, else name
         gh = export.get('contact', {}).get('GitHub', [])
         emails = export.get('contact', {}).get('Email', [])
         if gh:
@@ -565,9 +626,13 @@ if uploaded:
     except Exception as e:
         st.warning(f"Could not save parsed resume: {e}")
 
-    # ── MENTOR RATING PREDICTION ───────────────────────────────────────────
+    # ── MENTOR RATING PREDICTION ───────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("## Mentor Rating Prediction")
+    st.markdown("""
+    <div style="text-align:center; margin-bottom: 1rem;">
+        <span style="font-size:1.8rem; font-weight:800; color:#1e293b;">🤖 Mentor Rating Prediction</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     import os
     model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mentor_model.pkl")
@@ -575,11 +640,20 @@ if uploaded:
         with open(model_path, "rb") as f:
             ml_model = pickle.load(f)
 
-        skills_count_ml   = len(data.get("_skill_tags", []))
-        projects_count_ml = total_proj_count
-        exp_lines_ml      = [l for l in data.get("EXPERIENCE", []) if l]
-        experience_years  = max(1, len(exp_lines_ml) // 3)
-        feedback_score    = 3.0  # default neutral for new mentor
+        skills_count_ml    = len(data.get("_skill_tags", []))
+        projects_count_ml  = total_proj_count
+        exp_lines_ml       = [l for l in data.get("EXPERIENCE", []) if l]
+        internship_lines   = [l for l in data.get("INTERNSHIP", []) if l]
+
+        # Smart experience calculation
+        if exp_lines_ml:
+            experience_years = max(1, len(exp_lines_ml) // 3)
+        elif internship_lines:
+            experience_years = 0.5   # has internship but no full-time experience
+        else:
+            experience_years = 0     # pure fresher — no experience at all
+
+        feedback_score    = 3.0
 
         input_data = pd.DataFrame([{
             "experience_years": experience_years,
@@ -600,13 +674,15 @@ if uploaded:
         else:
             grade, color = "Poor", "#ef4444"
 
+        exp_label = f"{experience_years} yrs" if experience_years >= 1 else ("Internship only" if experience_years == 0.5 else "Fresher")
+
         st.markdown(f"""
         <div style="background:{color};border-radius:14px;padding:2rem;
                     text-align:center;margin-top:1rem;">
             <div style="font-size:3rem;font-weight:900;color:white;">{predicted_rating:.1f} / 100</div>
             <div style="font-size:1.4rem;color:white;font-weight:600;margin-top:0.5rem;">{grade} Mentor</div>
             <div style="font-size:0.85rem;color:rgba(255,255,255,0.8);margin-top:0.8rem;">
-                Experience: {experience_years} yrs &nbsp;|&nbsp;
+                Experience: {exp_label} &nbsp;|&nbsp;
                 Skills: {skills_count_ml} &nbsp;|&nbsp;
                 Projects: {projects_count_ml}
             </div>

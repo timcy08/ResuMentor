@@ -1,0 +1,88 @@
+{
+  "name": "NAVYA SHARMA",
+  "contact": {
+    "Email": [
+      "navya.sharma0888@gmail.com"
+    ],
+    "Phone": [],
+    "LinkedIn": [],
+    "GitHub": [
+      "github.com/timcy08"
+    ]
+  },
+  "summary": [
+    "Artificial Intelligence student skilled in Python, SQL,Machine Learning, Excel, Power BI, Tableau, and Statistical Analysis.",
+    "Experienced in data cleaning, exploratory data analysis (EDA), dashboard development, predictive modeling, and business",
+    "intelligence reporting. Passionate about transforming data into actionable insights and building AI-driven solutions to support",
+    "business decision-making."
+  ],
+  "skills": [
+    "Programming: Python",
+    "SQ L",
+    "C++ Data Analysis: Data Cleaning",
+    "EDA",
+    "Statistical Analysis",
+    "Tableau",
+    "Microsoft Excel Libraries: Pandas",
+    "NumPy",
+    "Scikit-learn",
+    "Matplotlib",
+    "MySQL",
+    "DBMS Tools: Jupyter Notebook",
+    "GitHub",
+    "Object-Oriented Programming (OOPs)",
+    "DBMS"
+  ],
+  "education": [
+    "Bachelor of Technology (B.Tech) in Artificial Intelligence",
+    "BIT Jaipur | 2023 – Present",
+    "Semester-7(Currently)",
+    "CGPA: 8.34/10"
+  ],
+  "experience": [],
+  "internship": [
+    "Data Science Intern at Celebal Technologies",
+    "May 2026 – July 2026 (Expected) | Remote",
+    "Data Analyst Intern at Nexus of Nerds",
+    "May 2026 – Present | Remote"
+  ],
+  "projects": [
+    "Customer Behavior Analysis Analyzed 5,000+ customer transactions| Python, SQL, Power BI View Project",
+    "-Analyzed retail customer shopping data using Python, PostgreSQL, and Power BI to uncover customer behavior insights.",
+    "-Performed data cleaning, EDA, and SQL analysis to identify purchasing trends, demographics, and sales patterns.",
+    "-Built an interactive Power BI dashboard for visualizing customer insights and business performance.",
+    "PharmaDrishti – Pharmaceutical Market Intelligence Platform View Project",
+    "-Built a pharmaceutical market intelligence platform to analyze regional demand patterns and support.",
+    "-Data-driven drug distribution decisions",
+    "-Tech: Python, Scikit-learn, ML, NLP, Data Analysis",
+    "HR Analytics Dashboard- Created Tableau dashboards analyzing 1,400+ employee records and attrition",
+    "trends View Project",
+    "-Developed an interactive HR Analytics Dashboard in Tableau to analyze employee attrition, workforce demographics",
+    "and job satisfaction trends.",
+    "-Created KPI-based visualizations for attrition rate, employee count, department-wise analysis, and gender insights.",
+    "-Designed interactive dashboards with filters and data storytelling techniques to deliver clear HR business insights.",
+    "Heart Disease Prediction System -Tech Stack: Python, Scikit-learn, LogisticRegression,Pandas,Streamlit."
+  ],
+  "github_repos": [
+    "Celebal-datascience-assignment",
+    "Student-Performance-Analytics-Dashboard",
+    "hr-dashboard-tableau",
+    "customer_behavior_analysis",
+    "Pharmadrishti",
+    "TelcoCustomerAnalysis"
+  ],
+  "project_counts": {
+    "resume": 4,
+    "github": 6,
+    "total": 9
+  },
+  "certifications": [
+    "Data Analytics Masters 2026: From Basics To Advanced — Udemy Instructor: Dr. Satyajit Pattnaik",
+    "The Complete Machine Learning Course: From Zero to Expert! — Udemy Instructor: Lucas Bazilio",
+    "JUNE-JULY 2025 -Machine learning[ Vital skills Summer internship program in assosiation with Techkriti IIT Kanpur] .",
+    "2023-C,C++, Data Structures & Algorithms Course[RDX JAIPUR]."
+  ],
+  "achievements": [
+    "-Hackfest 2026 – Top 9 Finalist (800+ participants) – SAP × MBA Hackfest, Great Lakes Institute of Management."
+  ]
+}
