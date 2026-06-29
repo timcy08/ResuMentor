@@ -6,3 +6,6 @@ requests
 xgboost
 scikit-learn
 pickle5
+
+# Added for training pipeline
+tqdm

@@ -540,6 +540,31 @@ if uploaded:
         mime="application/json",
     )
 
+    # Save parsed resume JSON for dataset building
+    try:
+        import time, os
+        parsed_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "parsed_resumes")
+        os.makedirs(parsed_dir, exist_ok=True)
+        mentor_id = None
+        # try to pick a stable id: GitHub username if present, else email, else name
+        gh = export.get('contact', {}).get('GitHub', [])
+        emails = export.get('contact', {}).get('Email', [])
+        if gh:
+            mentor_id = gh[0].split('/')[-1]
+        elif emails:
+            mentor_id = emails[0].split('@')[0]
+        else:
+            mentor_id = export.get('name') or os.path.splitext(uploaded.name)[0]
+
+        safe = re.sub(r"[^0-9a-zA-Z_-]", "_", str(mentor_id))[:50]
+        fname = f"{safe}_{int(time.time())}.json"
+        path = os.path.join(parsed_dir, fname)
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(export, fh, ensure_ascii=False, indent=2)
+        st.info(f"Saved parsed resume to {fname}")
+    except Exception as e:
+        st.warning(f"Could not save parsed resume: {e}")
+
     # ── MENTOR RATING PREDICTION ───────────────────────────────────────────
     st.markdown("---")
     st.markdown("## Mentor Rating Prediction")
