@@ -4,144 +4,367 @@ import re
 import json
 import requests
 import pandas as pd
-import pickle
 
 st.set_page_config(page_title="ResuMentor", page_icon="📄", layout="wide")
 
-# ── ResuMentor Title ───────────────────────────────────────────────────────────
-st.markdown("""
-<div style="text-align: center; padding: 20px 0 10px 0;">
-    <span style="
-        font-size: 3.5rem;
-        font-weight: 900;
-        background: linear-gradient(90deg, #6366f1, #8b5cf6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 2px;
-    ">ResuMentor</span>
-    <p style="
-        color: #64748b;
-        font-size: 1.1rem;
-        margin-top: 5px;
-        font-weight: 500;
-    ">AI-Powered Resume Parser & Mentor Evaluator</p>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
+# ── Global CSS ─────────────────────────────────────────────────────────────────
+st.markdown(
+    """
 <style>
-body { font-family: 'Segoe UI', sans-serif; }
-.main-title {
-    font-size: 2.2rem; font-weight: 800; color: #1e293b;
-    text-align: center; margin-bottom: 0.2rem;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
 }
-.subtitle {
-    text-align: center; color: #64748b; margin-bottom: 1.5rem; font-size: 1rem;
+.stApp {
+    background: #F7F4EE;
 }
-.pipeline {
-    display: flex; justify-content: center; align-items: center;
-    gap: 0.4rem; flex-wrap: wrap;
-    background: linear-gradient(90deg,#6366f1,#8b5cf6);
-    border-radius: 10px; padding: 0.8rem 1rem;
-    color: white; font-size: 0.9rem; margin-bottom: 2rem;
+
+/* ── Hero header ── */
+.rm-hero {
+    text-align: center;
+    padding: 2.5rem 1rem 1.4rem;
+}
+.rm-logo {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 3.6rem;
+    font-weight: 900;
+    color: #1A1A2E;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+.rm-logo span {
+    color: #D4813A;
+}
+.rm-tagline {
+    font-size: 1.02rem;
+    color: #6B6B80;
+    margin-top: 0.5rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+}
+
+/* ── Pipeline banner ── */
+.rm-pipeline {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    background: #1A1A2E;
+    border-radius: 12px;
+    padding: 0.7rem 1.2rem;
+    color: #C8C8DC;
+    font-size: 0.83rem;
+    margin: 0.5rem auto 2rem;
+    max-width: 760px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+.rm-pipeline .arrow { color: #D4813A; margin: 0 2px; }
+
+/* ── Section cards ── */
+.rm-card {
+    background: #FFFFFF;
+    border: 1px solid #E8E3D9;
+    border-radius: 16px;
+    padding: 1.3rem 1.6rem;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 1px 6px rgba(26,26,46,0.05);
+}
+.rm-card-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: #D4813A;
+    margin-bottom: 0.75rem;
+    border-bottom: 1.5px solid #F0EBE0;
+    padding-bottom: 0.45rem;
+}
+
+/* ── Name ── */
+.rm-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin: 0;
+}
+
+/* ── Contact chips ── */
+.rm-contact-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+.rm-chip {
+    background: #F7F4EE;
+    border: 1px solid #DDD8CE;
+    border-radius: 99px;
+    padding: 4px 13px;
+    font-size: 0.8rem;
+    color: #3D3D55;
     font-weight: 500;
 }
-.section-wrap {
-    background: #ffffff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 1.2rem 1.5rem;
-    margin-bottom: 1.2rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+
+/* ── Skill tags ── */
+.rm-skill {
+    display: inline-block;
+    background: #FFF5EC;
+    color: #A0541A;
+    border: 1px solid #F5D9BC;
+    border-radius: 99px;
+    padding: 3px 12px;
+    font-size: 0.79rem;
+    margin: 3px 3px;
+    font-weight: 500;
 }
-.sec-title {
-    font-size: 0.72rem;
+
+/* ── Entry blocks ── */
+.rm-entry {
+    border-left: 3px solid #E8C9A0;
+    padding-left: 0.9rem;
+    margin-bottom: 1rem;
+}
+.rm-entry-title { font-weight: 600; color: #1A1A2E; font-size: 0.92rem; }
+.rm-entry-sub   { color: #7A7A90; font-size: 0.8rem; margin: 0.1rem 0 0.2rem; }
+.rm-entry-body  { font-size: 0.84rem; color: #3D3D55; line-height: 1.65; }
+
+/* ── Content text ── */
+.rm-content {
+    font-size: 0.88rem;
+    color: #3D3D55;
+    white-space: pre-wrap;
+    line-height: 1.75;
+}
+
+/* ── Project stat bar ── */
+.rm-projbar {
+    display: flex;
+    gap: 0;
+    background: #1A1A2E;
+    border-radius: 12px;
+    padding: 0.85rem 1.2rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+.rm-projstat { text-align: center; flex: 1; }
+.rm-projstat-num {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1;
+}
+.rm-projstat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #8888AA;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    margin-top: 3px;
+}
+.rm-projdiv {
+    width: 1px;
+    background: rgba(255,255,255,0.15);
+    align-self: stretch;
+    min-height: 40px;
+    margin: 0 0.4rem;
+}
+
+/* ── Project list items ── */
+.rm-proj-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    margin-bottom: 0.4rem;
+    background: #F7F4EE;
+    border-radius: 9px;
+    border-left: 3px solid #D4813A;
+}
+.rm-proj-num { font-size: 0.75rem; font-weight: 700; color: #D4813A; min-width: 22px; }
+.rm-proj-name { font-size: 0.87rem; color: #1A1A2E; font-weight: 600; }
+.rm-proj-badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    background: #FFF5EC;
+    color: #A0541A;
+    border-radius: 99px;
+    padding: 2px 9px;
+    border: 1px solid #F5D9BC;
+}
+.rm-gh-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    margin-bottom: 0.4rem;
+    background: #F0FBF6;
+    border-radius: 9px;
+    border-left: 3px solid #2D9E6B;
+}
+.rm-gh-num { font-size: 0.75rem; font-weight: 700; color: #2D9E6B; min-width: 22px; }
+.rm-gh-badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    background: #E5F7EF;
+    color: #1A6B47;
+    border-radius: 99px;
+    padding: 2px 9px;
+    border: 1px solid #B8E8D0;
+}
+
+/* ── Mentor rating button ── */
+.rm-rate-btn-wrap { text-align: center; margin: 2rem 0 0.5rem; }
+
+/* ── Star rating display ── */
+.rm-rating-card {
+    background: #FFFFFF;
+    border: 1px solid #E8E3D9;
+    border-radius: 20px;
+    padding: 2rem 2rem 1.6rem;
+    text-align: center;
+    max-width: 520px;
+    margin: 1rem auto;
+    box-shadow: 0 4px 24px rgba(26,26,46,0.08);
+}
+.rm-rating-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #8888AA;
+    margin-bottom: 0.7rem;
+}
+.rm-stars {
+    font-size: 2.8rem;
+    line-height: 1;
+    letter-spacing: 3px;
+    margin: 0.3rem 0 0.5rem;
+    color: #D4813A;
+}
+.rm-rating-score {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.6rem;
+    font-weight: 900;
+    color: #1A1A2E;
+    line-height: 1;
+}
+.rm-rating-grade {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+}
+.rm-rating-meta {
+    font-size: 0.8rem;
+    color: #9999B0;
+    margin-top: 0.9rem;
+    line-height: 1.7;
+}
+.rm-rating-pills {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+.rm-rating-pill {
+    background: #F7F4EE;
+    border: 1px solid #E0DAD0;
+    border-radius: 99px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    color: #3D3D55;
+    font-weight: 500;
+}
+
+/* ── Projects list: collapse Streamlit's default block spacing
+   around each st.markdown() call so project rows sit tight together.
+   Targets the block container directly (not nested inside a wrapper,
+   since each st.markdown() call is its own sibling in the real DOM) ── */
+div[data-testid="stVerticalBlock"] > div[data-testid="element-container"]:has(> div[data-testid="stMarkdownContainer"] > div.rm-proj-item),
+div[data-testid="stVerticalBlock"] > div[data-testid="element-container"]:has(> div[data-testid="stMarkdownContainer"] > div.rm-gh-item) {
+    margin-bottom: 0.4rem !important;
+}
+div[data-testid="stMarkdownContainer"]:has(> div.rm-proj-item),
+div[data-testid="stMarkdownContainer"]:has(> div.rm-gh-item) {
+    margin: 0 !important;
+}
+
+/* ── Github divider ── */
+.rm-gh-divider {
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #6366f1;
-    margin-bottom: 0.6rem;
-    border-bottom: 2px solid #e0e7ff;
-    padding-bottom: 0.4rem;
+    color: #2D9E6B;
+    margin: 1rem 0 0.5rem;
+    border-bottom: 1.5px solid #D0F0E4;
+    padding-bottom: 0.3rem;
 }
-.name-text {
-    font-size: 1.7rem;
-    font-weight: 800;
-    color: #1e293b;
-    margin: 0;
+
+/* ── Streamlit component tweaks ── */
+.stFileUploader > label { font-weight: 600; color: #1A1A2E; }
+.stButton > button {
+    background: #1A1A2E !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.55rem 1.6rem !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.03em !important;
+    transition: background 0.2s !important;
 }
-.contact-row {
-    display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.4rem;
+.stButton > button:hover {
+    background: #D4813A !important;
 }
-.contact-chip {
-    background: #f1f5f9; border: 1px solid #cbd5e1;
-    border-radius: 20px; padding: 3px 12px;
-    font-size: 0.82rem; color: #334155;
+div[data-testid="stExpander"] {
+    background: #FFFFFF;
+    border: 1px solid #E8E3D9 !important;
+    border-radius: 12px !important;
+    margin-bottom: 0.8rem;
 }
-.skill-tag {
-    display: inline-block;
-    background: #ede9fe; color: #4c1d95;
-    border-radius: 20px; padding: 3px 13px;
-    font-size: 0.82rem; margin: 3px 3px;
-    font-weight: 500;
+div[data-testid="stExpander"] summary {
+    color: #1A1A2E !important;
+    font-weight: 600 !important;
 }
-.content-text {
-    font-size: 0.88rem; color: #374151;
-    white-space: pre-wrap; line-height: 1.7;
+div[data-testid="stExpander"] summary p,
+div[data-testid="stExpander"] summary span,
+div[data-testid="stExpander"] summary div {
+    color: #1A1A2E !important;
 }
-.entry-block {
-    border-left: 3px solid #c7d2fe;
-    padding-left: 0.8rem;
-    margin-bottom: 0.9rem;
+div[data-testid="stExpander"] svg {
+    fill: #1A1A2E !important;
 }
-.entry-title { font-weight: 700; color: #1e293b; font-size: 0.92rem; }
-.entry-sub   { color: #6b7280; font-size: 0.82rem; margin-bottom: 0.2rem; }
-.entry-body  { font-size: 0.85rem; color: #374151; line-height: 1.6; }
-.github-card {
-    border: 1.5px solid #d1d5db;
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.75rem;
-    background: #f8fafc;
-    transition: box-shadow 0.2s;
-}
-.github-card:hover { box-shadow: 0 4px 12px rgba(99,102,241,0.15); border-color: #a5b4fc; }
-.github-card-title { font-weight: 700; color: #4f46e5; font-size: 0.92rem; text-decoration: none; }
-.github-card-title:hover { text-decoration: underline; }
-.github-card-desc { color: #6b7280; font-size: 0.82rem; margin: 0.2rem 0 0.4rem; }
-.github-card-meta { display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.78rem; color: #9ca3af; }
-.lang-dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:#6366f1; margin-right:3px; }
-.gh-divider { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#10b981; margin: 0.8rem 0 0.5rem; border-bottom: 2px solid #d1fae5; padding-bottom:0.3rem; }
-.proj-stats-bar {
-    display: flex; gap: 0; flex-wrap: wrap;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
-    border-radius: 10px; padding: 0.75rem 1.2rem;
-    margin-bottom: 1rem; align-items: center;
-}
-.proj-stat-box {
-    text-align: center; flex: 1; min-width: 70px;
-}
-.proj-stat-num {
-    font-size: 1.6rem; font-weight: 900; color: #ffffff; line-height: 1;
-}
-.proj-stat-label {
-    font-size: 0.68rem; font-weight: 600; color: #c7d2fe;
-    text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px;
-}
-.proj-stat-divider {
-    width: 1px; background: rgba(255,255,255,0.35);
-    align-self: stretch; min-height: 40px; margin: 0 0.5rem;
+div[data-testid="stExpanderDetails"] {
+    background: #FFFFFF;
+    color: #3D3D55 !important;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-st.markdown('<div class="subtitle">Upload your resume PDF — we\'ll parse, analyze & predict your mentor rating!</div>', unsafe_allow_html=True)
-st.markdown("""
-<div class="pipeline">
-  📤 Upload &nbsp;→&nbsp; 🔍 Extract Text &nbsp;→&nbsp;
-  🗂️ Identify Sections &nbsp;→&nbsp; 🤖 Predict Mentor Rating &nbsp;→&nbsp; ✅ Display Results
+# ── Hero ───────────────────────────────────────────────────────────────────────
+st.markdown(
+    """
+<div class="rm-hero">
+  <div class="rm-logo">Resu<span>Mentor</span></div>
+  <p class="rm-tagline">Drop your resume — we'll handle the rest</p>
 </div>
-""", unsafe_allow_html=True)
+<div class="rm-pipeline">
+  📤 Upload
+  <span class="arrow">→</span>
+  🔍 Extract Text
+  <span class="arrow">→</span>
+  🗂️ Parse Sections
+  <span class="arrow">→</span>
+  📊 Analyse Profile
+  <span class="arrow">→</span>
+  ✅ Results
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ── Text extraction ────────────────────────────────────────────────────────────
@@ -213,10 +436,10 @@ def parse_resume(text: str) -> dict:
     return result
 
 
-def section_box(title: str, content_html: str):
+def section_card(title: str, content_html: str):
     st.markdown(f"""
-    <div class="section-wrap">
-      <div class="sec-title">{title}</div>
+    <div class="rm-card">
+      <div class="rm-card-title">{title}</div>
       {content_html}
     </div>""", unsafe_allow_html=True)
 
@@ -260,38 +483,41 @@ def lines_to_entries(lines):
 
 
 # ── Upload ─────────────────────────────────────────────────────────────────────
-uploaded = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
+uploaded = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
 
 if uploaded:
     with st.spinner("Reading PDF…"):
         raw_text = extract_text(uploaded)
     if not raw_text:
-        st.error("No text found. The PDF may be image/scanned. Try a text-based PDF.")
+        st.error("No text found in this PDF. It may be a scanned image. Try a text-based PDF.")
         st.stop()
 
     with st.spinner("Parsing sections…"):
         data = parse_resume(raw_text)
 
-    st.success(f"✅ Parsed **{uploaded.name}** successfully!")
+    st.success(f"✅  Parsed **{uploaded.name}** — here's what we found.")
     st.markdown("---")
 
     # ── NAME ──────────────────────────────────────────────────────────────────
     name = data["_name"]
-    section_box("👤 Name", f'<p class="name-text">{name or "Not detected"}</p>')
+    section_card("👤 Name",
+        f'<p class="rm-name">{name or "Not detected"}</p>')
 
     # ── CONTACT ───────────────────────────────────────────────────────────────
     cp = data["_contact"]
     contact_chips = ""
     for label, vals in cp.items():
         for v in vals:
-            contact_chips += f'<span class="contact-chip">📌 {label}: {v}</span>'
+            contact_chips += f'<span class="rm-chip">📌 {label}: {v}</span>'
     if contact_chips:
-        section_box("📬 Contact", f'<div class="contact-row">{contact_chips}</div>')
+        section_card("📬 Contact",
+            f'<div class="rm-contact-row">{contact_chips}</div>')
 
     # ── SUMMARY ───────────────────────────────────────────────────────────────
     summary = [l for l in data.get("SUMMARY", []) if l]
     if summary:
-        section_box("📝 Professional Summary", f'<p class="content-text">{chr(10).join(summary)}</p>')
+        section_card("📝 Summary",
+            f'<p class="rm-content">{chr(10).join(summary)}</p>')
 
     # ── Pre-calculate project counts BEFORE columns ───────────────────────────
     import difflib
@@ -339,10 +565,11 @@ if uploaded:
         # SKILLS
         tags = data.get("_skill_tags", [])
         if tags:
-            tags_html = "".join(f'<span class="skill-tag">{t}</span>' for t in tags)
-            section_box("🛠️ Skills", tags_html)
+            tags_html = "".join(f'<span class="rm-skill">{t}</span>' for t in tags)
+            section_card("🛠️ Skills", tags_html)
         elif data.get("SKILLS"):
-            section_box("🛠️ Skills", f'<p class="content-text">{chr(10).join(data["SKILLS"])}</p>')
+            section_card("🛠️ Skills",
+                f'<p class="rm-content">{chr(10).join(data["SKILLS"])}</p>')
 
         # EDUCATION
         edu = [l for l in data.get("EDUCATION", []) if l]
@@ -350,12 +577,12 @@ if uploaded:
             entries = lines_to_entries(edu)
             html = ""
             for e in entries:
-                html += '<div class="entry-block">'
-                html += f'<div class="entry-title">{e[0]}</div>'
+                html += '<div class="rm-entry">'
+                html += f'<div class="rm-entry-title">{e[0]}</div>'
                 for sub in e[1:]:
-                    html += f'<div class="entry-body">{sub}</div>'
+                    html += f'<div class="rm-entry-body">{sub}</div>'
                 html += "</div>"
-            section_box("🎓 Education", html)
+            section_card("🎓 Education", html)
 
         # CERTIFICATIONS
         certs = [l for l in data.get("CERTIFICATIONS", []) if l]
@@ -363,18 +590,18 @@ if uploaded:
             entries = lines_to_entries(certs)
             html = ""
             for e in entries:
-                html += '<div class="entry-block">'
-                html += f'<div class="entry-title">{e[0]}</div>'
+                html += '<div class="rm-entry">'
+                html += f'<div class="rm-entry-title">{e[0]}</div>'
                 for sub in e[1:]:
-                    html += f'<div class="entry-body">{sub}</div>'
+                    html += f'<div class="rm-entry-body">{sub}</div>'
                 html += "</div>"
-            section_box("🏅 Certifications", html)
+            section_card("🏅 Certifications", html)
 
         # ACHIEVEMENTS
         ach = [l for l in data.get("ACHIEVEMENTS", []) if l]
         if ach:
-            html = "".join(f'<div class="entry-body">• {l}</div>' for l in ach)
-            section_box("🏆 Achievements", html)
+            html = "".join(f'<div class="rm-entry-body" style="margin-bottom:0.3rem;">• {l}</div>' for l in ach)
+            section_card("🏆 Achievements", html)
 
     with col2:
         # EXPERIENCE
@@ -383,29 +610,26 @@ if uploaded:
             entries = lines_to_entries(exp)
             html = ""
             for e in entries:
-                html += '<div class="entry-block">'
-                html += f'<div class="entry-title">{e[0]}</div>'
+                html += '<div class="rm-entry">'
+                html += f'<div class="rm-entry-title">{e[0]}</div>'
                 for sub in e[1:]:
-                    html += f'<div class="entry-body">{sub}</div>'
+                    html += f'<div class="rm-entry-body">{sub}</div>'
                 html += "</div>"
-            section_box("💼 Work Experience", html)
+            section_card("💼 Work Experience", html)
 
         # INTERNSHIP
         intern = [l for l in data.get("INTERNSHIP", []) if l]
         if intern:
-            # Smart split: detect new internship entry by bold/title-like lines
             entries = []
             current_entry = []
             for line in intern:
-                # A new internship starts if line looks like a title:
-                # not starting with -, •, * and is not a date/location line
                 is_new_entry = (
                     line
                     and not line.startswith(("-", "•", "*", "-"))
                     and not re.match(r"^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d)", line, re.I)
                     and not re.match(r"^(remote|onsite|hybrid|present|expected)", line, re.I)
                     and len(line) > 10
-                    and current_entry  # only split if we already have an entry
+                    and current_entry
                     and re.search(r"(intern|analyst|engineer|developer|scientist|manager|at |@)", line, re.I)
                 )
                 if is_new_entry:
@@ -420,8 +644,6 @@ if uploaded:
                     current_entry.append(line)
             if current_entry:
                 entries.append(current_entry)
-
-            # fallback: if only 1 entry found, use lines_to_entries
             if len(entries) <= 1:
                 entries = lines_to_entries(intern)
 
@@ -429,12 +651,12 @@ if uploaded:
             for e in entries:
                 if not e:
                     continue
-                html += '<div class="entry-block">'
-                html += f'<div class="entry-title">{e[0]}</div>'
+                html += '<div class="rm-entry">'
+                html += f'<div class="rm-entry-title">{e[0]}</div>'
                 for sub in e[1:]:
-                    html += f'<div class="entry-body">{sub}</div>'
+                    html += f'<div class="rm-entry-body">{sub}</div>'
                 html += "</div>"
-            section_box(f"🏢 Internship ({len(entries)} found)", html)
+            section_card(f"🏢 Internship ({len(entries)} found)", html)
 
         # ── PROJECTS (resume + GitHub) ─────────────────────────────────────
         proj_raw = [l for l in data.get("PROJECTS", []) if l]
@@ -481,87 +703,85 @@ if uploaded:
 
         github_proj_count = len(gh_repos)
 
-        # ── Deduplicate
-        import difflib
+        import difflib as _difflib
         def normalize(s):
             return re.sub(r"[^a-z0-9]", "", s.lower())
 
         gh_normalized = [normalize(r["name"]) for r in gh_repos]
         resume_normalized = [normalize(n) for n in resume_proj_names]
-
-        duplicates = 0
-        for rn in resume_normalized:
-            matches = difflib.get_close_matches(rn, gh_normalized, n=1, cutoff=0.7)
-            if matches:
-                duplicates += 1
-
+        duplicates = sum(
+            1 for rn in resume_normalized
+            if _difflib.get_close_matches(rn, gh_normalized, n=1, cutoff=0.7)
+        )
         total_proj_count = resume_proj_count + github_proj_count - duplicates
 
         if proj_raw or gh_repos:
+            # Open card + stat bar + divider (kept short and separate from the
+            # per-item loop below — very long single HTML strings can get
+            # rendered as raw text by Streamlit instead of parsed HTML)
             st.markdown(f"""
-            <div class="section-wrap">
-            <div class="sec-title">🚀 Projects</div>
-            <div class="proj-stats-bar">
-                <div class="proj-stat-box">
-                    <div class="proj-stat-num">📄 {resume_proj_count}</div>
-                    <div class="proj-stat-label">Resume Projects</div>
+            <div class="rm-card">
+              <div class="rm-card-title">🚀 Projects</div>
+              <div class="rm-projbar">
+                <div class="rm-projstat">
+                  <div class="rm-projstat-num">📄 {resume_proj_count}</div>
+                  <div class="rm-projstat-label">Resume Projects</div>
                 </div>
-                <div class="proj-stat-divider"></div>
-                <div class="proj-stat-box">
-                    <div class="proj-stat-num">🐙 {github_proj_count}</div>
-                    <div class="proj-stat-label">GitHub Repos</div>
+                <div class="rm-projdiv"></div>
+                <div class="rm-projstat">
+                  <div class="rm-projstat-num">🐙 {github_proj_count}</div>
+                  <div class="rm-projstat-label">GitHub Repos</div>
                 </div>
-                <div class="proj-stat-divider"></div>
-                <div class="proj-stat-box">
-                    <div class="proj-stat-num">✨ {total_proj_count}</div>
-                    <div class="proj-stat-label">Total Unique Projects</div>
+                <div class="rm-projdiv"></div>
+                <div class="rm-projstat">
+                  <div class="rm-projstat-num">✨ {total_proj_count}</div>
+                  <div class="rm-projstat-label">Total Unique Projects</div>
                 </div>
-            </div>
-            <div class="gh-divider">📋 All Project Names</div>
+              </div>
+              <div class="rm-gh-divider">📋 All Project Names</div>
             </div>
             """, unsafe_allow_html=True)
 
+            # Build all row HTML, then flush in small batches (4 rows per
+            # st.markdown call). This avoids both failure modes seen before:
+            # one huge call gets dumped as raw text by Streamlit, while one
+            # call per row creates a visible white gap between every row.
+            all_rows = []
             for i, name_r in enumerate(resume_proj_names, 1):
-                st.markdown(f"""
-                <div style="display:flex;align-items:center;gap:0.6rem;
-                            padding:0.55rem 0.8rem;margin-bottom:0.45rem;
-                            background:#f1f5f9;border-radius:8px;
-                            border-left:4px solid #6366f1;">
-                    <span style="font-size:0.78rem;font-weight:700;color:#6366f1;min-width:24px;">#{i}</span>
-                    <span style="font-size:0.88rem;color:#1e293b;font-weight:600;">📄 {name_r}</span>
-                    <span style="margin-left:auto;font-size:0.72rem;background:#e0e7ff;
-                                 color:#4338ca;border-radius:20px;padding:2px 10px;">Resume</span>
-                </div>""", unsafe_allow_html=True)
+                all_rows.append(
+                    f'<div class="rm-proj-item">'
+                    f'<span class="rm-proj-num">#{i}</span>'
+                    f'<span class="rm-proj-name">📄 {name_r}</span>'
+                    f'<span class="rm-proj-badge">Resume</span>'
+                    f'</div>'
+                )
 
             for j, repo in enumerate(gh_repos, resume_proj_count + 1):
                 repo_url  = repo["url"]
                 repo_name = repo["name"]
                 repo_lang = repo.get("language") or ""
-                badges = ""
-                if repo_lang.strip():
-                    badges += (
-                        '<span style="font-size:0.72rem;background:#d1fae5;color:#065f46;'
-                        f'border-radius:20px;padding:2px 8px;margin-right:4px;">{repo_lang}</span>'
-                    )
-                badges += (
-                    '<span style="font-size:0.72rem;background:#d1fae5;color:#065f46;'
-                    'border-radius:20px;padding:2px 10px;">GitHub</span>'
+                lang_badge = (
+                    f'<span style="font-size:0.7rem;background:#D0F0E4;color:#1A6B47;'
+                    f'border-radius:99px;padding:2px 8px;margin-right:4px;">{repo_lang}</span>'
+                    if repo_lang.strip() else ""
                 )
-                st.markdown(
-                    '<div style="display:flex;align-items:center;gap:0.6rem;'
-                    'padding:0.55rem 0.8rem;margin-bottom:0.45rem;'
-                    'background:#f8fafc;border-radius:8px;border-left:4px solid #10b981;">'
-                    f'<span style="font-size:0.78rem;font-weight:700;color:#10b981;min-width:24px;">#{j}</span>'
+                all_rows.append(
+                    f'<div class="rm-gh-item">'
+                    f'<span class="rm-gh-num">#{j}</span>'
                     f'<a href="{repo_url}" target="_blank" '
-                    'style="font-size:0.88rem;color:#1e293b;font-weight:600;text-decoration:none;">'
+                    f'style="font-size:0.87rem;color:#1A1A2E;font-weight:600;text-decoration:none;">'
                     f'🐙 {repo_name}</a>'
-                    f'<span style="margin-left:auto;display:flex;gap:0.3rem;align-items:center;">{badges}</span>'
-                    '</div>',
-                    unsafe_allow_html=True
+                    f'<span style="margin-left:auto;display:flex;align-items:center;gap:4px;">'
+                    f'{lang_badge}<span class="rm-gh-badge">GitHub</span></span>'
+                    f'</div>'
                 )
 
+            BATCH_SIZE = 4
+            for k in range(0, len(all_rows), BATCH_SIZE):
+                st.markdown("".join(all_rows[k:k + BATCH_SIZE]), unsafe_allow_html=True)
+
             if not gh_repos and gh_username:
-                st.markdown('<p style="color:#ef4444;font-size:0.85rem;">⚠️ Could not fetch GitHub repos (private profile or API limit).</p>', unsafe_allow_html=True)
+                st.markdown('<p style="color:#ef4444;font-size:0.83rem;">⚠️ Could not fetch GitHub repos (private profile or API limit).</p>', unsafe_allow_html=True)
 
     # ── Raw text ──────────────────────────────────────────────────────────────
     with st.expander("📃 View Raw Extracted Text"):
@@ -616,7 +836,6 @@ if uploaded:
             mentor_id = emails[0].split('@')[0]
         else:
             mentor_id = export.get('name') or os.path.splitext(uploaded.name)[0]
-
         safe = re.sub(r"[^0-9a-zA-Z_-]", "_", str(mentor_id))[:50]
         fname = f"{safe}_{int(time.time())}.json"
         path = os.path.join(parsed_dir, fname)
@@ -626,71 +845,155 @@ if uploaded:
     except Exception as e:
         st.warning(f"Could not save parsed resume: {e}")
 
-    # ── MENTOR RATING PREDICTION ───────────────────────────────────────────────
+    # ── MENTOR RATING — Button-triggered, 5-star display ──────────────────────
     st.markdown("---")
-    st.markdown("""
-    <div style="text-align:center; margin-bottom: 1rem;">
-        <span style="font-size:1.8rem; font-weight:800; color:#1e293b;">🤖 Mentor Rating Prediction</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="rm-rate-btn-wrap">', unsafe_allow_html=True)
 
-    import os
-    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mentor_model.pkl")
-    try:
-        with open(model_path, "rb") as f:
-            ml_model = pickle.load(f)
+    if "show_rating" not in st.session_state:
+        st.session_state["show_rating"] = False
 
-        skills_count_ml    = len(data.get("_skill_tags", []))
-        projects_count_ml  = total_proj_count
-        exp_lines_ml       = [l for l in data.get("EXPERIENCE", []) if l]
-        internship_lines   = [l for l in data.get("INTERNSHIP", []) if l]
+    col_btn_l, col_btn_c, col_btn_r = st.columns([2, 1, 2])
+    with col_btn_c:
+        if st.button("⭐  See Mentor Rating"):
+            st.session_state["show_rating"] = True
 
-        # Smart experience calculation
-        if exp_lines_ml:
-            experience_years = max(1, len(exp_lines_ml) // 3)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if st.session_state["show_rating"]:
+        skills_count_ml   = len(data.get("_skill_tags", []))
+        projects_count_ml = total_proj_count
+        exp_lines_ml      = [l for l in data.get("EXPERIENCE", []) if l]
+        internship_lines  = [l for l in data.get("INTERNSHIP", []) if l]
+
+        # ── Real duration parsing ───────────────────────────────────────
+        # Reads actual date ranges like "June 2025 – July 2025" or
+        # "Jan 2023 - Present" out of the EXPERIENCE/INTERNSHIP text and
+        # sums real months, instead of guessing from line counts.
+        import datetime
+
+        MONTHS = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        }
+
+        def parse_month_year(token: str):
+            token = token.strip().lower()
+            if token in ("present", "current", "now", "till date", "ongoing", "expected"):
+                today = datetime.date.today()
+                return today.year * 12 + today.month
+            m = re.match(r"([a-z]{3,9})[a-z]*\.?\s+(\d{4})", token)
+            if m:
+                mon_str, year_str = m.group(1)[:3], m.group(2)
+                if mon_str in MONTHS:
+                    return int(year_str) * 12 + MONTHS[mon_str]
+            m2 = re.match(r"(\d{4})$", token)
+            if m2:
+                return int(m2.group(1)) * 12 + 1
+            return None
+
+        def total_months_from_lines(lines):
+            text = " ".join(lines)
+            # Matches "Jan 2023 – Dec 2023", "June 2025 - July 2025",
+            # "Jan 2023 - Present", "2022 - 2023", etc.
+            # Anchored on actual month-name tokens (not a generic word) so
+            # it can't swallow a preceding job title like "Senior Analyst
+            # 2019" as if "Analyst" were part of the date — that bug caused
+            # any resume with more than one date range, or a bare-year
+            # range preceded by a title on the same line, to silently
+            # return 0 months for that entry.
+            MONTH_NAMES = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+            date_token = rf"{MONTH_NAMES}[a-z]*\.?\s+\d{{4}}|\d{{4}}"
+            pattern = re.compile(
+                rf"\b({date_token})\s*[-–—]+\s*"
+                rf"({date_token}|present|current|now|till date|ongoing|expected)\b",
+                re.IGNORECASE,
+            )
+            months = 0
+            for start_raw, end_raw in pattern.findall(text):
+                start = parse_month_year(start_raw)
+                end = parse_month_year(end_raw)
+                if start is not None and end is not None and end >= start:
+                    months += (end - start) + 1  # inclusive of both months
+            return months
+
+        exp_months = total_months_from_lines(exp_lines_ml)
+        intern_months = total_months_from_lines(internship_lines)
+        total_months = exp_months + intern_months
+
+        if total_months > 0:
+            experience_years = round(total_months / 12, 3)
+        elif exp_lines_ml:
+            # Dates couldn't be parsed but there is experience text —
+            # don't silently report 0; fall back to a conservative
+            # estimate rather than guessing a full year.
+            experience_years = 0.5
         elif internship_lines:
-            experience_years = 0.5   # has internship but no full-time experience
+            experience_years = 0.25
         else:
-            experience_years = 0     # pure fresher — no experience at all
+            experience_years = 0
 
-        feedback_score    = 3.0
+        feedback_score = 3.0  # neutral default — no real feedback collected yet
 
-        input_data = pd.DataFrame([{
-            "experience_years": experience_years,
-            "skills_count"    : skills_count_ml,
-            "projects_count"  : projects_count_ml,
-            "feedback_score"  : feedback_score
-        }])
+        # ── Mentor rating: documented weighted formula ──────────────────
+        # mentor_rating = (experience_years * 2) + (skills_count * 1.5)
+        #                + (projects_count * 1.2) + (feedback_score * 10)
+        # capped at 100. This is the formula the project's own dataset
+        # generator (Final Dataset.py) and design doc define, and unlike
+        # the previously-used mentor_model.pkl (an XGBoost model trained
+        # on only 40 synthetic rows of WHOLE-NUMBER experience_years from
+        # 1–15, i.e. working professionals), it is linear and well-behaved
+        # at ANY experience value — including fractional years from a
+        # resume with only a few months of internship. The pickled model
+        # had never seen values like 0.17 during training, so it would
+        # silently clamp to its nearest learned region and effectively
+        # ignore experience for students — that's why it kept returning
+        # "Excellent Mentor" regardless of whether someone had 2 months
+        # or 2 years of experience. This formula has no such blind spot.
+        predicted_rating = (
+            (experience_years * 2)
+            + (skills_count_ml * 1.5)
+            + (projects_count_ml * 1.2)
+            + (feedback_score * 10)
+        )
+        predicted_rating = min(round(predicted_rating, 2), 100.0)
+        predicted_rating = max(predicted_rating, 0.0)
 
-        predicted_rating = ml_model.predict(input_data)[0]
-        predicted_rating = min(float(predicted_rating), 100.0)
+        # Convert 0-100 → 0-5 stars
+        stars_float = (predicted_rating / 100.0) * 5.0
+        full_stars  = int(stars_float)
+        half_star   = 1 if (stars_float - full_stars) >= 0.4 else 0
+        empty_stars = 5 - full_stars - half_star
+
+        stars_display = "★" * full_stars + ("½" if half_star else "") + "☆" * empty_stars
 
         if predicted_rating >= 80:
-            grade, color = "Excellent", "#10b981"
+            grade, grade_color = "Excellent Mentor", "#10b981"
         elif predicted_rating >= 60:
-            grade, color = "Good", "#6366f1"
+            grade, grade_color = "Good Mentor", "#6366f1"
         elif predicted_rating >= 40:
-            grade, color = "Average", "#f59e0b"
+            grade, grade_color = "Developing Mentor", "#f59e0b"
         else:
-            grade, color = "Poor", "#ef4444"
+            grade, grade_color = "Needs Growth", "#ef4444"
 
-        exp_label = f"{experience_years} yrs" if experience_years >= 1 else ("Internship only" if experience_years == 0.5 else "Fresher")
+        if experience_years >= 1:
+            exp_label = f"{experience_years:g} yrs"
+        elif experience_years > 0:
+            months_label = round(experience_years * 12)
+            exp_label = f"{months_label} mo" if months_label != 1 else "1 mo"
+        else:
+            exp_label = "Fresher"
 
         st.markdown(f"""
-        <div style="background:{color};border-radius:14px;padding:2rem;
-                    text-align:center;margin-top:1rem;">
-            <div style="font-size:3rem;font-weight:900;color:white;">{predicted_rating:.1f} / 100</div>
-            <div style="font-size:1.4rem;color:white;font-weight:600;margin-top:0.5rem;">{grade} Mentor</div>
-            <div style="font-size:0.85rem;color:rgba(255,255,255,0.8);margin-top:0.8rem;">
-                Experience: {exp_label} &nbsp;|&nbsp;
-                Skills: {skills_count_ml} &nbsp;|&nbsp;
-                Projects: {projects_count_ml}
-            </div>
-            <div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-top:0.4rem;">
-                Based on resume data only (no student feedback yet)
-            </div>
+        <div class="rm-rating-card">
+          <div class="rm-rating-label">Mentor Rating Prediction</div>
+          <div class="rm-stars" title="{stars_float:.1f} out of 5">{stars_display}</div>
+          <div class="rm-rating-score">{stars_float:.1f} <span style="font-size:1.2rem;color:#9999B0;">/ 5</span></div>
+          <div class="rm-rating-grade" style="color:{grade_color};">{grade}</div>
+          <div class="rm-rating-pills">
+            <span class="rm-rating-pill">⏱ {exp_label}</span>
+            <span class="rm-rating-pill">🛠 {skills_count_ml} skills</span>
+            <span class="rm-rating-pill">🚀 {projects_count_ml} projects</span>
+          </div>
+          <div class="rm-rating-meta">Score based on resume data · {predicted_rating:.1f} / 100 internally</div>
         </div>
         """, unsafe_allow_html=True)
-
-    except FileNotFoundError:
-        st.error(f"mentor_model.pkl not found at: {model_path}")
