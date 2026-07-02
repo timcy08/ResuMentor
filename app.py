@@ -23,7 +23,7 @@ html, body, [class*="css"] {
 /* ── Hero header ── */
 .rm-hero {
     text-align: center;
-    padding: 2.5rem 1rem 1.4rem;
+    padding: 2.5rem 1rem 2.2rem;
 }
 .rm-logo {
     font-family: 'Playfair Display', Georgia, serif;
@@ -43,25 +43,6 @@ html, body, [class*="css"] {
     font-weight: 400;
     letter-spacing: 0.01em;
 }
-
-/* ── Pipeline banner ── */
-.rm-pipeline {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.35rem;
-    flex-wrap: wrap;
-    background: #1A1A2E;
-    border-radius: 12px;
-    padding: 0.7rem 1.2rem;
-    color: #C8C8DC;
-    font-size: 0.83rem;
-    margin: 0.5rem auto 2rem;
-    max-width: 760px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-}
-.rm-pipeline .arrow { color: #D4813A; margin: 0 2px; }
 
 /* ── Section cards ── */
 .rm-card {
@@ -351,17 +332,6 @@ st.markdown(
   <div class="rm-logo">Resu<span>Mentor</span></div>
   <p class="rm-tagline">Drop your resume — we'll handle the rest</p>
 </div>
-<div class="rm-pipeline">
-  📤 Upload
-  <span class="arrow">→</span>
-  🔍 Extract Text
-  <span class="arrow">→</span>
-  🗂️ Parse Sections
-  <span class="arrow">→</span>
-  📊 Analyse Profile
-  <span class="arrow">→</span>
-  ✅ Results
-</div>
 """,
     unsafe_allow_html=True,
 )
@@ -495,7 +465,7 @@ if uploaded:
     with st.spinner("Parsing sections…"):
         data = parse_resume(raw_text)
 
-    st.success(f"✅  Parsed **{uploaded.name}** — here's what we found.")
+    st.success(f"Here's what we found in **{uploaded.name}**")
     st.markdown("---")
 
     # ── NAME ──────────────────────────────────────────────────────────────────
@@ -841,9 +811,8 @@ if uploaded:
         path = os.path.join(parsed_dir, fname)
         with open(path, 'w', encoding='utf-8') as fh:
             json.dump(export, fh, ensure_ascii=False, indent=2)
-        st.info(f"Saved parsed resume to {fname}")
-    except Exception as e:
-        st.warning(f"Could not save parsed resume: {e}")
+    except Exception:
+        pass  # internal dataset logging only — safe to skip silently
 
     # ── MENTOR RATING — Button-triggered, 5-star display ──────────────────────
     st.markdown("---")
@@ -854,7 +823,7 @@ if uploaded:
 
     col_btn_l, col_btn_c, col_btn_r = st.columns([2, 1, 2])
     with col_btn_c:
-        if st.button("⭐  See Mentor Rating"):
+        if st.button("See Profile Score"):
             st.session_state["show_rating"] = True
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -967,13 +936,13 @@ if uploaded:
         stars_display = "★" * full_stars + ("½" if half_star else "") + "☆" * empty_stars
 
         if predicted_rating >= 80:
-            grade, grade_color = "Excellent Mentor", "#10b981"
+            grade, grade_color = "Strong Profile", "#10b981"
         elif predicted_rating >= 60:
-            grade, grade_color = "Good Mentor", "#6366f1"
+            grade, grade_color = "Solid Profile", "#6366f1"
         elif predicted_rating >= 40:
-            grade, grade_color = "Developing Mentor", "#f59e0b"
+            grade, grade_color = "Growing Profile", "#f59e0b"
         else:
-            grade, grade_color = "Needs Growth", "#ef4444"
+            grade, grade_color = "Early Stage", "#ef4444"
 
         if experience_years >= 1:
             exp_label = f"{experience_years:g} yrs"
@@ -985,7 +954,7 @@ if uploaded:
 
         st.markdown(f"""
         <div class="rm-rating-card">
-          <div class="rm-rating-label">Mentor Rating Prediction</div>
+          <div class="rm-rating-label">Profile Score</div>
           <div class="rm-stars" title="{stars_float:.1f} out of 5">{stars_display}</div>
           <div class="rm-rating-score">{stars_float:.1f} <span style="font-size:1.2rem;color:#9999B0;">/ 5</span></div>
           <div class="rm-rating-grade" style="color:{grade_color};">{grade}</div>
@@ -994,6 +963,6 @@ if uploaded:
             <span class="rm-rating-pill">🛠 {skills_count_ml} skills</span>
             <span class="rm-rating-pill">🚀 {projects_count_ml} projects</span>
           </div>
-          <div class="rm-rating-meta">Score based on resume data · {predicted_rating:.1f} / 100 internally</div>
+          <div class="rm-rating-meta">Based on your experience, skills and project count</div>
         </div>
         """, unsafe_allow_html=True)
