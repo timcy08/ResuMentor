@@ -927,8 +927,12 @@ if uploaded:
         predicted_rating = min(round(predicted_rating, 2), 100.0)
         predicted_rating = max(predicted_rating, 0.0)
 
-        # Convert 0-100 → 0-5 stars
-        stars_float = (predicted_rating / 100.0) * 5.0
+        # Convert 0-100 → 0-10 rating (the number shown to the user)
+        rating_out_of_10 = round((predicted_rating / 100.0) * 10.0, 1)
+
+        # Stars are still shown out of 5 for the visual, derived from the
+        # same 0-10 rating (rating_out_of_10 / 10 * 5 == rating_out_of_10 / 2)
+        stars_float = rating_out_of_10 / 2.0
         full_stars  = int(stars_float)
         half_star   = 1 if (stars_float - full_stars) >= 0.4 else 0
         empty_stars = 5 - full_stars - half_star
@@ -955,8 +959,8 @@ if uploaded:
         st.markdown(f"""
         <div class="rm-rating-card">
           <div class="rm-rating-label">Profile Score</div>
-          <div class="rm-stars" title="{stars_float:.1f} out of 5">{stars_display}</div>
-          <div class="rm-rating-score">{stars_float:.1f} <span style="font-size:1.2rem;color:#9999B0;">/ 5</span></div>
+          <div class="rm-stars" title="{rating_out_of_10:.1f} out of 10">{stars_display}</div>
+          <div class="rm-rating-score">{rating_out_of_10:.1f} <span style="font-size:1.2rem;color:#9999B0;">/ 10</span></div>
           <div class="rm-rating-grade" style="color:{grade_color};">{grade}</div>
           <div class="rm-rating-pills">
             <span class="rm-rating-pill">⏱ {exp_label}</span>
